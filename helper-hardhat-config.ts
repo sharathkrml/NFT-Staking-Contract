@@ -12,7 +12,7 @@ export const networkConfig: NetworkConfigType = {
     '31337': {
         name: 'localhost',
         waitConfirmations: 0,
-        args: ['www.google.com'],
+        args: ['www.google.com/'],
     },
     '4': {
         name: 'rinkeby',

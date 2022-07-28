@@ -15,7 +15,6 @@ contract StakeableNFT is ERC721 {
     }
 
     function safeMint(address to) public {
-        console.log(bytes(s_baseUri).length);
         s_tokenId++;
         _safeMint(to, s_tokenId);
     }
