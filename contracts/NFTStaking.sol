@@ -12,6 +12,15 @@ contract NFTStaking {
         i_nft = StakeableNFT(_nft);
     }
 
+    function onERC721Received(
+        address, /*_operator*/
+        address, /*_from*/
+        uint256, /*_tokenId*/
+        bytes calldata /*_data*/
+    ) external pure returns (bytes4) {
+        return 0x150b7a02;
+    }
+
     function getRewardToken() external view returns (RewardToken) {
         return i_rewardToken;
     }
