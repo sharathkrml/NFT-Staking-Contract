@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
-import 'hardhat/console.sol';
 
 contract StakeableNFT is ERC721 {
     using Strings for uint256;
