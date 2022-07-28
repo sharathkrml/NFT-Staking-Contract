@@ -39,4 +39,4 @@ const deployStaking: DeployFunction = async (
     }
 }
 export default deployStaking
-deployStaking.tags = ['all', 'nft']
+deployStaking.tags = ['all']

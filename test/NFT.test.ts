@@ -38,7 +38,7 @@ describe('StakeableNFT', () => {
         it('check tokenURI', async () => {
             assert.equal(
                 await stakeableNFT.tokenURI(1),
-                networkConfig['31337'].args[0] + '1' + '.json'
+                networkConfig['31337'].nft.args[0] + '1' + '.json'
             )
         })
         it('checking unminted tokenURI', async () => {
