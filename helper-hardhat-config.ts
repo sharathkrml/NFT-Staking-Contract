@@ -5,6 +5,7 @@ type NetworkConfigType = {
         name: string
         waitConfirmations: number
         nft: { args: string[] }
+        emissionPerDay: number
     }
 }
 
@@ -15,6 +16,7 @@ export const networkConfig: NetworkConfigType = {
         nft: {
             args: ['www.google.com/'],
         },
+        emissionPerDay: 1000,
     },
     '4': {
         name: 'rinkeby',
@@ -22,6 +24,7 @@ export const networkConfig: NetworkConfigType = {
         nft: {
             args: [''],
         },
+        emissionPerDay: 1000,
     },
 }
 

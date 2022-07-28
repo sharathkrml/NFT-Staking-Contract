@@ -14,7 +14,7 @@ const deployStaking: DeployFunction = async (
     const IS_TESTNET = currChainId == devChainId
     const nftContract: StakeableNFT = await ethers.getContract('StakeableNFT')
     log(IS_TESTNET ? "Chill you're on TestNet 🍹" : 'This is Real game🚀')
-    let { waitConfirmations, name } = networkConfig[currChainId]
+    let { waitConfirmations, name, emissionPerDay } = networkConfig[currChainId]
     log(`deploying NFT Contract on ${name}.....😇`)
     const rewardToken = await deploy('RewardToken', {
         from: deployer,
@@ -27,7 +27,11 @@ const deployStaking: DeployFunction = async (
         await verify(rewardToken.address, [])
     }
     log('deployed Token 🥳')
-    let nftStakingArgs = [rewardToken.address, nftContract.address]
+    let nftStakingArgs = [
+        rewardToken.address,
+        nftContract.address,
+        emissionPerDay,
+    ]
     const nftStaking = await deploy('NFTStaking', {
         from: deployer,
         log: true,

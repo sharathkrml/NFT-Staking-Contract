@@ -1,6 +1,7 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { assert } from 'chai'
 import { deployments, ethers } from 'hardhat'
+import { networkConfig } from '../helper-hardhat-config'
 import { NFTStaking, RewardToken, StakeableNFT } from '../typechain-types'
 
 describe('NFTStaking test 🥳', () => {
@@ -24,8 +25,15 @@ describe('NFTStaking test 🥳', () => {
         it('check StakeableNFT', async () => {
             assert.equal(await nftStaking.getStakeableNFT(), NFT.address)
         })
+        it('check emissionPerDay', async () => {
+            let emissionPerDay = networkConfig['31337'].emissionPerDay
+            assert.equal(
+                (await nftStaking.getEmissionPerDay()).toString(),
+                ethers.utils.parseEther(emissionPerDay.toString()).toString()
+            )
+        })
     })
-    describe('try sending NFT to staking contract', () => {
+    describe('try onERC721Received', () => {
         beforeEach(async () => {
             let tx = await NFT.safeMint(user1.address)
             await tx.wait(1)
