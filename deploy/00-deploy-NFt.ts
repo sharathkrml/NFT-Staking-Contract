@@ -9,17 +9,17 @@ const deployNFT: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const { deploy, log } = deployments
     const IS_TESTNET = currChainId == devChainId
     log(IS_TESTNET ? "Chill you're on TestNet 🍹" : 'This is Real game🚀')
-    let { waitConfirmations, args, name } = networkConfig[currChainId]
+    let { waitConfirmations, nft, name } = networkConfig[currChainId]
     log(`deploying NFT Contract on ${name}.....😇`)
     const NFTContract = await deploy('StakeableNFT', {
         from: deployer,
-        args: args,
+        args: nft.args,
         waitConfirmations: waitConfirmations,
         log: true,
     })
     if (!IS_TESTNET) {
         log('Verifying.......💃')
-        await verify(NFTContract.address, args)
+        await verify(NFTContract.address, nft.args)
     }
 }
 export default deployNFT
