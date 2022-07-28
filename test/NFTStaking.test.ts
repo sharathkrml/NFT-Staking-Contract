@@ -31,16 +31,13 @@ describe('NFTStaking test 🥳', () => {
             await tx.wait(1)
         })
         it('sending NFT to Staking contract', async () => {
-            try {
-                let tx = await NFT['safeTransferFrom(address,address,uint256)'](
-                    user1.address,
-                    nftStaking.address,
-                    1
-                )
-                await tx.wait(1)
-            } catch (error) {
-                console.log(error)
-            }
+            let tx = await NFT['safeTransferFrom(address,address,uint256)'](
+                user1.address,
+                nftStaking.address,
+                1
+            )
+            await tx.wait(1)
+            assert.equal(await NFT.ownerOf(1), nftStaking.address)
         })
     })
 })

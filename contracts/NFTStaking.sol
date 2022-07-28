@@ -2,8 +2,9 @@
 pragma solidity ^0.8.4;
 import './RewardToken.sol';
 import './StakeableNFT.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 
-contract NFTStaking {
+contract NFTStaking is IERC721Receiver {
     RewardToken private immutable i_rewardToken;
     StakeableNFT private immutable i_nft;
 
@@ -13,12 +14,12 @@ contract NFTStaking {
     }
 
     function onERC721Received(
-        address, /*_operator*/
-        address, /*_from*/
-        uint256, /*_tokenId*/
-        bytes calldata /*_data*/
-    ) external pure returns (bytes4) {
-        return 0x150b7a02;
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 
     function getRewardToken() external view returns (RewardToken) {
