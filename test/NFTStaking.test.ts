@@ -1,6 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { assert, expect } from 'chai'
-import { deployments, ethers } from 'hardhat'
+import { deployments, ethers, network } from 'hardhat'
 import { networkConfig } from '../helper-hardhat-config'
 import { NFTStaking, RewardToken, StakeableNFT } from '../typechain-types'
 
@@ -83,6 +83,31 @@ describe('NFTStaking test 🥳', () => {
                     'NFTStaking__NotOwner'
                 )
                 .withArgs(1)
+        })
+        it('try staking at different times', async () => {
+            let tx = await nftStaking.stake([1])
+            await tx.wait(1)
+            let firstStake = await nftStaking.getStake(user1.address)
+
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+
+            tx = await nftStaking.stake([2])
+            await tx.wait(1)
+            let lastStake = await nftStaking.getStake(user1.address)
+            let timeDifference = lastStake.lastTimeStamp.sub(
+                firstStake.lastTimeStamp
+            )
+            let emissionPerSec = emissionPerDay / (24 * 60 * 60)
+            let quantityInEth = timeDifference.mul(emissionPerSec)
+            assert.equal(
+                lastStake.emissionRate.toString(),
+                firstStake.emissionRate.mul(2).toString()
+            )
+            assert.equal(
+                lastStake.tokenQuantity.toString(),
+                ethers.utils.parseEther(quantityInEth.toString()).toString()
+            )
         })
     })
 })
