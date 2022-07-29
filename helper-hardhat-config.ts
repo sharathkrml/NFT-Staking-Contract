@@ -16,7 +16,7 @@ export const networkConfig: NetworkConfigType = {
         nft: {
             args: ['www.google.com/'],
         },
-        emissionPerDay: 1000,
+        emissionPerDay: 86400,
     },
     '4': {
         name: 'rinkeby',
