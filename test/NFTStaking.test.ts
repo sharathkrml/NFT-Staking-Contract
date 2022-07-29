@@ -110,4 +110,46 @@ describe('NFTStaking test 🥳', () => {
             )
         })
     })
+
+    describe('claim function', () => {
+        beforeEach(async () => {
+            // mints 5 NFTs to user1
+            for (let i = 0; i < 5; i++) {
+                let tx = await NFT.safeMint(user1.address)
+                await tx.wait(1)
+                tx = await NFT.approve(nftStaking.address, i + 1)
+                await tx.wait(1)
+            }
+        })
+        it('try when not staked any', async () => {
+            await expect(nftStaking.claim(1)).to.revertedWithCustomError(
+                nftStaking,
+                'NFTStaking__NothingStaked'
+            )
+        })
+        it('try claim ideal case', async () => {
+            let claimsList = []
+            // first stake one token
+            let tx = await nftStaking.stake([1])
+            await tx.wait(1)
+            let stakeNow = await nftStaking.getStake(user1.address)
+            claimsList.push(stakeNow)
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+            // stake another after 10 sec
+            tx = await nftStaking.stake([2])
+            await tx.wait(1)
+            stakeNow = await nftStaking.getStake(user1.address)
+            claimsList.push(stakeNow)
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+            // claim 10 tokens after 10 sec
+            tx = await nftStaking.claim(10)
+            await tx.wait(1)
+            stakeNow = await nftStaking.getStake(user1.address)
+            claimsList.push(stakeNow)
+            console.log((await Token.balanceOf(user1.address)).toString())
+            console.log(claimsList)
+        })
+    })
 })

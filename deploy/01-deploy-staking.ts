@@ -2,7 +2,7 @@ import { ethers } from 'hardhat'
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { devChainId, networkConfig } from '../helper-hardhat-config'
-import { StakeableNFT } from '../typechain-types'
+import { RewardToken, StakeableNFT } from '../typechain-types'
 import verify from '../utils/verify'
 const deployStaking: DeployFunction = async (
     hre: HardhatRuntimeEnvironment
@@ -37,6 +37,10 @@ const deployStaking: DeployFunction = async (
         log: true,
         args: nftStakingArgs,
     })
+    let rewardTokenContract: RewardToken = await ethers.getContract(
+        'RewardToken'
+    )
+    await rewardTokenContract.transferOwnership(nftStaking.address)
     if (!IS_TESTNET) {
         log('Verifying NFTStaking.......💃')
         await verify(nftStaking.address, [])
