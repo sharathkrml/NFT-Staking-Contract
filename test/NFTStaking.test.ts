@@ -141,8 +141,9 @@ describe('NFTStaking test 🥳', () => {
             // claim 10 token after 10 sec
             await network.provider.send('evm_increaseTime', [10])
             await network.provider.send('evm_mine', [])
-            tx = await nftStaking.claim(10)
-            await tx.wait(1)
+            await expect(nftStaking.claim(10))
+                .to.emit(nftStaking, 'Claim')
+                .withArgs(10)
             let lastStake = await nftStaking.getStake(user1.address)
             let timeDiff = lastStake.lastTimeStamp.sub(firstStake.lastTimeStamp)
             let emissionRatePerSec = firstStake.emissionRate.div(24 * 60 * 60)
@@ -167,6 +168,40 @@ describe('NFTStaking test 🥳', () => {
             ).to.revertedWithCustomError(
                 nftStaking,
                 'NFTStaking__NotEligibleForThisMuch'
+            )
+        })
+    })
+    describe('claimAll', () => {
+        beforeEach(async () => {
+            // mints 5 NFTs to user1
+            for (let i = 0; i < 5; i++) {
+                let tx = await NFT.safeMint(user1.address)
+                await tx.wait(1)
+                tx = await NFT.approve(nftStaking.address, i + 1)
+                await tx.wait(1)
+            }
+        })
+        it('try claiming when nothing staked', async () => {
+            await expect(nftStaking.claimAll()).to.revertedWithCustomError(
+                nftStaking,
+                'NFTStaking__NothingStaked'
+            )
+        })
+        it('tries ideal case of claimAll', async () => {
+            let tx = await nftStaking.stake([1])
+            await tx.wait(1)
+
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+            await expect(nftStaking.claimAll())
+                .to.emit(nftStaking, 'Claim')
+                .withArgs(ethers.utils.parseEther('11'))
+            let afterClaiming = await nftStaking.getStake(user1.address)
+            assert.equal(afterClaiming.tokenQuantity.toString(), '0')
+            //    check balanceOf user
+            assert.equal(
+                (await Token.balanceOf(user1.address)).toString(),
+                ethers.utils.parseEther('11').toString()
             )
         })
     })
