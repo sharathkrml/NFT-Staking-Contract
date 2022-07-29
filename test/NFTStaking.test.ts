@@ -128,28 +128,46 @@ describe('NFTStaking test 🥳', () => {
             )
         })
         it('try claim ideal case', async () => {
-            let claimsList = []
             // first stake one token
             let tx = await nftStaking.stake([1])
             await tx.wait(1)
-            let stakeNow = await nftStaking.getStake(user1.address)
-            claimsList.push(stakeNow)
+            await nftStaking.getStake(user1.address)
             await network.provider.send('evm_increaseTime', [10])
             await network.provider.send('evm_mine', [])
             // stake another after 10 sec
             tx = await nftStaking.stake([2])
             await tx.wait(1)
-            stakeNow = await nftStaking.getStake(user1.address)
-            claimsList.push(stakeNow)
+            let firstStake = await nftStaking.getStake(user1.address)
+            // claim 10 token after 10 sec
             await network.provider.send('evm_increaseTime', [10])
             await network.provider.send('evm_mine', [])
-            // claim 10 tokens after 10 sec
             tx = await nftStaking.claim(10)
             await tx.wait(1)
-            stakeNow = await nftStaking.getStake(user1.address)
-            claimsList.push(stakeNow)
-            console.log((await Token.balanceOf(user1.address)).toString())
-            console.log(claimsList)
+            let lastStake = await nftStaking.getStake(user1.address)
+            let timeDiff = lastStake.lastTimeStamp.sub(firstStake.lastTimeStamp)
+            let emissionRatePerSec = firstStake.emissionRate.div(24 * 60 * 60)
+            let calculated = firstStake.tokenQuantity.add(
+                emissionRatePerSec.mul(timeDiff)
+            )
+            assert.equal(
+                lastStake.tokenQuantity.add(10).toString(),
+                calculated.toString()
+            )
+        })
+        it('checks NFTStaking__NotEligibleForThisMuch', async () => {
+            // stake
+            let tx = await nftStaking.stake([1])
+            await tx.wait(1)
+
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+
+            await expect(
+                nftStaking.claim(ethers.utils.parseEther('100'))
+            ).to.revertedWithCustomError(
+                nftStaking,
+                'NFTStaking__NotEligibleForThisMuch'
+            )
         })
     })
 })
