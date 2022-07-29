@@ -8,6 +8,8 @@ import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 // @title NFT Staking contract
 
 error NFTStaking__NotOwner(uint256 tokenId);
+error NFTStaking__NothingStaked();
+error NFTStaking__NotEligibleForThisMuch();
 
 contract NFTStaking is IERC721Receiver, ReentrancyGuard {
     RewardToken private immutable i_rewardToken;
@@ -17,11 +19,19 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
     struct Stake {
         uint256 lastTimestamp; // store added time / last claimed time
         uint256 emissionRate;
-        uint256 calculatedRate;
+        uint256 tokenAmount;
+        uint256[] tokenIds;
     }
 
     mapping(address => Stake) private s_stakeByAddress;
-    mapping(address => uint256[]) private s_tokenByAddress;
+
+    event Staked(
+        uint256 lastTImeStamp,
+        uint256 emissionRate,
+        uint256 tokenAmount,
+        uint256[] tokenIds
+    );
+    event Claim(uint256 amount);
 
     constructor(
         address _token,
@@ -35,31 +45,71 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
 
     function stake(uint256[] calldata _ids) external nonReentrant {
         Stake memory m_stake = s_stakeByAddress[msg.sender];
-        // calculate rate so far
         if (m_stake.lastTimestamp != 0) {
-            // only if staking is called by user more than once
-            m_stake.calculatedRate = _calculateRate(m_stake);
+            m_stake.tokenAmount = _tokenAmountSoFar(
+                m_stake.lastTimestamp,
+                m_stake.emissionRate,
+                m_stake.tokenAmount
+            );
         }
         for (uint256 i = 0; i < _ids.length; i++) {
             if (i_nft.ownerOf(_ids[i]) != msg.sender) {
                 revert NFTStaking__NotOwner(_ids[i]);
             }
+            s_stakeByAddress[msg.sender].tokenIds.push(_ids[i]);
             m_stake.emissionRate += s_emissionPerDay;
-            s_tokenByAddress[msg.sender].push(_ids[i]);
             i_nft.safeTransferFrom(msg.sender, address(this), _ids[i]);
         }
         m_stake.lastTimestamp = block.timestamp;
         s_stakeByAddress[msg.sender] = m_stake;
     }
 
-    function _calculateRate(Stake memory _stake)
-        internal
-        view
-        returns (uint256)
-    {
+    function unstake(uint256[] calldata _ids) external nonReentrant {}
+
+    function claim(uint256 _amount) external nonReentrant {
+        Stake memory m_stake = s_stakeByAddress[msg.sender];
+        if (m_stake.lastTimestamp != 0) {
+            m_stake.tokenAmount = _tokenAmountSoFar(
+                m_stake.lastTimestamp,
+                m_stake.emissionRate,
+                m_stake.tokenAmount
+            );
+            m_stake.lastTimestamp = block.timestamp;
+        }
+        if (m_stake.tokenAmount < _amount) {
+            revert NFTStaking__NotEligibleForThisMuch();
+        }
+        m_stake.tokenAmount -= _amount;
+        s_stakeByAddress[msg.sender] = m_stake;
+        i_rewardToken.mint(msg.sender, _amount);
+        emit Claim(_amount);
+    }
+
+    function claimAll() external nonReentrant {
+        Stake memory m_stake = s_stakeByAddress[msg.sender];
+        uint256 _amount;
+        if (m_stake.lastTimestamp != 0) {
+            _amount = _tokenAmountSoFar(
+                m_stake.lastTimestamp,
+                m_stake.emissionRate,
+                m_stake.tokenAmount
+            );
+            m_stake.lastTimestamp = block.timestamp;
+        }
+        m_stake.tokenAmount = 0;
+        s_stakeByAddress[msg.sender] = m_stake;
+        i_rewardToken.mint(msg.sender, _amount);
+        emit Claim(_amount);
+    }
+
+    function _tokenAmountSoFar(
+        uint256 lastTimeStamp,
+        uint256 emissionRate,
+        uint256 currTokenAmount
+    ) internal view returns (uint256) {
         return
-            ((block.timestamp - _stake.lastTimestamp) * _stake.emissionRate) /
-            1 days;
+            currTokenAmount +
+            (((block.timestamp - lastTimeStamp) * emissionRate) / 1 days);
     }
 
     /**
@@ -98,13 +148,5 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
 
     function getStake(address _address) external view returns (Stake memory) {
         return s_stakeByAddress[_address];
-    }
-
-    function getToken(address _address)
-        external
-        view
-        returns (uint256[] memory)
-    {
-        return s_tokenByAddress[_address];
     }
 }
