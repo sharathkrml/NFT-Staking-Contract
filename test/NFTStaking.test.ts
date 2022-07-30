@@ -205,4 +205,52 @@ describe('NFTStaking test 🥳', () => {
             )
         })
     })
+    describe('unstake', () => {
+        beforeEach(async () => {
+            for (let i = 0; i < 5; i++) {
+                let tx = await NFT.safeMint(user1.address)
+                await tx.wait(1)
+                tx = await NFT.approve(nftStaking.address, i + 1)
+                await tx.wait(1)
+            }
+        })
+        it('unstake when nothing staked', async () => {
+            await expect(nftStaking.unstake([1])).to.revertedWithCustomError(
+                nftStaking,
+                'NFTStaking__NothingStaked'
+            )
+        })
+        it('tries unstake 3 tokens', async () => {
+            let tx = await nftStaking.stake([1, 2, 3, 4, 5])
+            await tx.wait(1)
+            let afterStake = await nftStaking.getStake(user1.address)
+
+            // staking for 10 sec
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+            assert.equal(await NFT.ownerOf(1), nftStaking.address)
+            assert.equal(await NFT.ownerOf(2), nftStaking.address)
+            assert.equal(await NFT.ownerOf(3), nftStaking.address)
+
+            await expect(nftStaking.unstake([1, 2, 3])).to.emit(
+                nftStaking,
+                'Unstaked'
+            )
+            let afterUnstake = await nftStaking.getStake(user1.address)
+            assert.equal(
+                afterUnstake.emissionRate.toString(),
+                ethers.utils
+                    .parseEther(emissionPerDay.toString())
+                    .mul(2)
+                    .toString()
+            )
+            assert.equal(await NFT.ownerOf(1), user1.address)
+            assert.equal(await NFT.ownerOf(2), user1.address)
+            assert.equal(await NFT.ownerOf(3), user1.address)
+            assert.equal(
+                await (await Token.balanceOf(user1.address)).toString(),
+                '0'
+            )
+        })
+    })
 })

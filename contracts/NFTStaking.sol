@@ -34,6 +34,7 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
         uint256 lastTimeStamp,
         uint256 emissionRate,
         uint256 tokenQuantity,
+        uint256 mintedTokens,
         uint256[] tokenIds
     );
     event Claim(uint256 amount);
@@ -95,10 +96,13 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
      * verifies if id belonged to msg.sender using s_ownerOf mapping
      * reduces emissionRate for further calculations
      * transfers NFTs to owner
+     * if emissionRate = 0,means everything is unstaked
+     * mints all token to msg.sender
      * @param _ids takes in list of NFT ids
      */
     function unstake(uint256[] calldata _ids) external nonReentrant {
         Stake memory m_stake = s_stakeByAddress[msg.sender];
+        uint256 mintCount;
         if (m_stake.lastTimeStamp == 0) {
             revert NFTStaking__NothingStaked();
         }
@@ -109,17 +113,23 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
         );
         m_stake.lastTimeStamp = block.timestamp;
         for (uint256 i = 0; i < _ids.length; i++) {
-            if (s_ownerOf[_ids[i]] == msg.sender) {
+            if (s_ownerOf[_ids[i]] != msg.sender) {
                 revert NFTStaking__NotOwner(_ids[i]);
             }
             m_stake.emissionRate -= s_emissionPerDay;
             i_nft.safeTransferFrom(address(this), msg.sender, _ids[i]);
+        }
+        if (m_stake.emissionRate == 0) {
+            mintCount = m_stake.tokenQuantity;
+            i_rewardToken.mint(msg.sender, mintCount);
+            m_stake.tokenQuantity = 0;
         }
         s_stakeByAddress[msg.sender] = m_stake;
         emit Unstaked(
             m_stake.lastTimeStamp,
             m_stake.emissionRate,
             m_stake.tokenQuantity,
+            mintCount,
             _ids
         );
     }
