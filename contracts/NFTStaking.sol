@@ -217,6 +217,20 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
     }
 
     // Getter functions
+    /**
+     * view function responds with currently claimable token count
+     * @dev uses _tokenQuantitySoFar to calculate the claimable amount
+     */
+    function calculateRewardNow() external view returns (uint256) {
+        Stake memory m_stake = s_stakeByAddress[msg.sender];
+        return
+            _tokenQuantitySoFar(
+                m_stake.lastTimeStamp,
+                m_stake.emissionRate,
+                m_stake.tokenQuantity
+            );
+    }
+
     function getRewardToken() external view returns (RewardToken) {
         return i_rewardToken;
     }

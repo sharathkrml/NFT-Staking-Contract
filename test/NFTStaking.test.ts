@@ -277,4 +277,24 @@ describe('NFTStaking test 🥳', () => {
             )
         })
     })
+    describe('calculateRewardNow', () => {
+        beforeEach(async () => {
+            for (let i = 0; i < 5; i++) {
+                let tx = await NFT.safeMint(user1.address)
+                await tx.wait(1)
+                tx = await NFT.approve(nftStaking.address, i + 1)
+                await tx.wait(1)
+            }
+        })
+        it('calculate reward after 1 sec', async () => {
+            let tx = await nftStaking.stake([1, 2, 3, 4, 5])
+            await tx.wait(1)
+            await network.provider.send('evm_increaseTime', [1])
+            await network.provider.send('evm_mine', [])
+            assert.equal(
+                (await nftStaking.calculateRewardNow()).toString(),
+                ethers.utils.parseEther('5').toString()
+            )
+        })
+    })
 })
