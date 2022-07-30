@@ -4,6 +4,7 @@ import './RewardToken.sol';
 import './StakeableNFT.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+
 // @author sharathkrml
 // @title NFT Staking contract
 
@@ -201,15 +202,6 @@ contract NFTStaking is IERC721Receiver, ReentrancyGuard {
         return
             currtokenQuantity +
             (((block.timestamp - lastTimeStamp) * emissionRatePerDay) / 1 days);
-    }
-
-    /**
-     * to change emission per day
-     * @dev sets new emissionPerDay
-     * @param _perDay takes emissionPerDay from user
-     */
-    function setEmissionPerDay(uint256 _perDay) external {
-        s_emissionPerDay = _perDay * 1 ether;
     }
 
     /**

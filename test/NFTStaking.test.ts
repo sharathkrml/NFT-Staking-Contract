@@ -252,5 +252,29 @@ describe('NFTStaking test 🥳', () => {
                 '0'
             )
         })
+        it('unstake all', async () => {
+            let tx = await nftStaking.stake([1, 2, 3])
+            await tx.wait(1)
+            let afterStake = await nftStaking.getStake(user1.address)
+            // staking for 10 sec
+            await network.provider.send('evm_increaseTime', [10])
+            await network.provider.send('evm_mine', [])
+
+            tx = await nftStaking.unstake([1, 2, 3])
+            let res = await tx.wait(1)
+            let afterUnstake = await nftStaking.getStake(user1.address)
+            let timeDiff = afterUnstake.lastTimeStamp.sub(
+                afterStake.lastTimeStamp
+            )
+            console.log(timeDiff)
+            let emissionRatePerSecInEth = (emissionPerDay * 3) / (24 * 60 * 60)
+            let emissionRatePerSec = ethers.utils.parseEther(
+                emissionRatePerSecInEth.toString()
+            )
+            assert.equal(
+                timeDiff.mul(emissionRatePerSec).toString(),
+                (await Token.balanceOf(user1.address)).toString()
+            )
+        })
     })
 })
